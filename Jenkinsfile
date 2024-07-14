@@ -4,13 +4,11 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                checkout scmGit(branches: [[name: 'main'], [name: 'feature']], extensions: [], userRemoteConfigs: [[credentialsId: 'Git', url: 'https://github.com/ramesh-h24/automation_demo.git']])
-            }
-        }
+                checkout scmGit(branches: [[name: '${sha1}']], extensions: [], userRemoteConfigs: [[credentialsId: 'Git', refspec: '+refs/pull/*:refs/remotes/origin/pr/*', url: 'https://github.com/ramesh-h24/automation_demo.git']])
 
         stage('Pull PR Branches') {
             steps {
-                checkout scmGit(branches: [[name: 'main'], [name: 'feature']], extensions: [], userRemoteConfigs: [[credentialsId: 'Git', url: 'https://github.com/ramesh-h24/automation_demo.git']])
+                checkout scmGit(branches: [[name: '${sha1}']], extensions: [], userRemoteConfigs: [[credentialsId: 'Git', refspec: '+refs/pull/*:refs/remotes/origin/pr/*', url: 'https://github.com/ramesh-h24/automation_demo.git']])
                 sh 'git fetch origin +refs/pull/*:refs/remotes/origin/pr/*' // Fetch PR branches
                 sh 'git checkout ${env.BRANCH_NAME}' // Switch to the current branch
                 sh 'git pull origin ${env.BRANCH_NAME}' // Pull latest changes
