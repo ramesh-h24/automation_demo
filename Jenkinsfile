@@ -1,11 +1,11 @@
 pipeline {
     agent any
-
     stages {
         stage('Checkout') {
             steps {
                 checkout scmGit(branches: [[name: '${sha1}']], extensions: [], userRemoteConfigs: [[credentialsId: 'Git', refspec: '+refs/pull/*:refs/remotes/origin/pr/*', url: 'https://github.com/ramesh-h24/automation_demo.git']])
-
+            }
+        }
         stage('Pull PR Branches') {
             steps {
                 checkout scmGit(branches: [[name: '${sha1}']], extensions: [], userRemoteConfigs: [[credentialsId: 'Git', refspec: '+refs/pull/*:refs/remotes/origin/pr/*', url: 'https://github.com/ramesh-h24/automation_demo.git']])
@@ -28,10 +28,9 @@ pipeline {
                     // Additional steps for handling PRs
                      } else {
                      echo "Skipping this stage for other branches."
-                     }
-               }
+                    }
+                }
             }
-       }
-
+        } 
     }
 }
