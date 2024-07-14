@@ -9,30 +9,31 @@ pipeline {
         }
 
         stage('Pull PR Branches') {
-            when {
-                expression { env.BRANCH_NAME.startsWith('feature') }
-            }
             steps {
-                // Your build steps for PR branches go here
-                sh 'git pull origin feature'
+                checkout scmGit(branches: [[name: 'main'], [name: 'feature']], extensions: [], userRemoteConfigs: [[credentialsId: 'Git', url: 'https://github.com/ramesh-h24/automation_demo.git']])
+                sh 'git fetch origin +refs/pull/*:refs/remotes/origin/pr/*' // Fetch PR branches
+                sh 'git checkout ${env.BRANCH_NAME}' // Switch to the current branch
+                sh 'git pull origin ${env.BRANCH_NAME}' // Pull latest changes
             }
         }
+
 
         stage('Check Merging') {
             steps {
                 script {
-                    if (env.BRANCH_NAME == 'main') {
-                        // Handle merging into master (e.g., deploy)
-                        echo 'echo test merging if no conflicts'
-                    } else if (env.BRANCH_NAME.startsWith('feature')) {
-                        // Handle pull request (e.g., test)
-                        echo 'PR occurs'
-                    } else {
-                        // Handle other branches (if needed)
-                        echo "Skipping this stage for non-PR branches."
-                    }
-                }
+                     if (env.BRANCH_NAME == 'main') {
+                     sh 'git checkout main'
+                     sh 'git merge --no-ff ${env.BRANCH_NAME}'
+                   // Add conflict resolution steps if needed
+                     } else if (env.BRANCH_NAME.startsWith('feature')) {
+                     echo 'PR occurs'
+                    // Additional steps for handling PRs
+                     } else {
+                     echo "Skipping this stage for other branches."
+                     }
+               }
             }
-        }
+       }
+
     }
 }
