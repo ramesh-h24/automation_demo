@@ -16,6 +16,12 @@ jobs:
       uses: actions/setup-node@v2
       with:
         node-version: '14'
+        
+    - name: Send Email via SendGrid
+      uses: dawidd6/action-send-mail@v3
+      with:
+       server_address: smtp.sendgrid.net
+       server_port: 587
 
     - name: Send Email on Pull Request
       if: github.event.action == 'opened'
