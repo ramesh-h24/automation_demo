@@ -1,32 +1,47 @@
-name: Pull Request Notification
+name: Notify and Merge
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened]
-    branches:
-      - dev
-      - staging
-      - main
+    types: [opened, synchronize]
 
 jobs:
-  send_email:
+  notify-and-merge:
     runs-on: ubuntu-latest
-
+    
     steps:
-      - name: Send Email Notification
-        uses: dawidd6/action-send-mail@v3
-        with:
-          server_address: 'https://smtpserver.com/'
-          server_port: 587
-          username: ${{ secrets.SMTP_USERNAME }}
-          password: ${{ secrets.SMTP_PASSWORD }}
-          subject: 'New Pull Request to ${{ github.event.pull_request.base.ref }}'
-          body: |
-            Pull Request #${{ github.event.pull_request.number }}: ${{ github.event.pull_request.title }}
+    - name: Checkout code
+      uses: actions/checkout@v2
 
-            URL: ${{ github.event.pull_request.html_url }}
+    - name: Set up Node.js
+      uses: actions/setup-node@v2
+      with:
+        node-version: '14'
 
-            Description: ${{ github.event.pull_request.body }}
-          to: 'raam42devops@gmail.com'
-          from: 'gituhb-pr@example.com'
-
+    - name: Send Email on Pull Request
+      if: github.event.action == 'opened'
+      run: |
+        echo "Pull request #${{ github.event.pull_request.number }} created by @${{ github.event.pull_request.user.login }}. Title: ${{ github.event.pull_request.title }}." | mail -s "New Pull Request" raam42devops@gmail.com
+    
+    - name: Check for merge conflicts
+      run: |
+        git fetch origin +refs/pull/${{ github.event.pull_request.number }}/merge
+        if ! git merge-tree $(git merge-base origin/${{ github.event.pull_request.base.ref }} HEAD) HEAD origin/${{ github.event.pull_request.head.ref }} | grep -q '<<<<<<<'; then
+          echo "No merge conflicts"
+        else
+          echo "Merge conflicts detected"
+          exit 1
+      shell: bash
+    
+    - name: Send Email on Merge Conflict
+      if: failure()
+      run: |
+        echo "Merge conflicts detected in PR #${{ github.event.pull_request.number }} by @${{ github.event.pull_request.user.login }}. Please resolve conflicts." | mail -s "Merge Conflict Alert" raam42devops@gmail.com
+    
+    - name: Merge PR
+      if: success()
+      run: |
+        git config --global user.name "${{ github.actor }}"
+        git config --global user.email "${{ github.actor }}@users.noreply.github.com"
+        git checkout ${{ github.event.pull_request.base.ref }}
+        git merge ${{ github.event.pull_request.head.ref }} -m "Merging PR #${{ github.event.pull_request.number }} from ${{ github.event.pull_request.user.login }}"
+        git push origin ${{ github.event.pull_request.base.ref }}
