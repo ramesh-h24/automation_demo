@@ -1,0 +1,32 @@
+name: Pull Request Notification
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches:
+      - dev
+      - staging
+      - main
+
+jobs:
+  send_email:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Send Email Notification
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: 'https://smtpserver.com/'
+          server_port: 587
+          username: ${{ secrets.SMTP_USERNAME }}
+          password: ${{ secrets.SMTP_PASSWORD }}
+          subject: 'New Pull Request to ${{ github.event.pull_request.base.ref }}'
+          body: |
+            Pull Request #${{ github.event.pull_request.number }}: ${{ github.event.pull_request.title }}
+
+            URL: ${{ github.event.pull_request.html_url }}
+
+            Description: ${{ github.event.pull_request.body }}
+          to: 'raam42devops@gmail.com'
+          from: 'gituhb-pr@example.com'
+
